@@ -1,4 +1,5 @@
 import os, sys, pathlib, re, platform
+from time import sleep
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from matt.matt import Matt
@@ -7,6 +8,7 @@ from matt.matt import Matt
 """
 https://winaero.com/ms-settings-commands-in-windows-10/
 http://woshub.com/ms-settings-uri-commands-windows-11/
+https://support.microsoft.com/en-us/windows/windows-keyboard-shortcuts-3d444b08-3a00-abd6-67da-ecfc07e86b98
 """
 class Windows():
 	CMD_DISABLE_TRANSPARENCY = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name EnableTransparency -Value 0 -Type Dword -Force'
@@ -18,19 +20,62 @@ class Windows():
 	def __init__(self, cache_path:str) -> None:
 		self.matt = Matt(cache_file=cache_path)
 
-		dir = os.path.realpath(os.path.dirname(__file__)) + '/img'
+		dir = os.path.realpath(os.path.dirname(__file__)) + '/img'  # C:/windows-user-setup/windows/img
+		dir = dir.replace(os.getcwd(), '').lstrip('\\/')            # windows/img
 		self.matt.set_ui({
-			'pin_to_taskbar': [f'{dir}/pin_to_taskbar_w10_dark.png', f'{dir}/pin_to_taskbar_w11_dark.png'],
-			'powershell_ready': [f'{dir}/powershell_ready_w10.png', f'{dir}/powershell_ready_w11.png'],
-			'run_title': [f'{dir}/run_title_w10.png', f'{dir}/run_title_w11.png'],
-			'search_app_done': [f'{dir}/search_app_done_w10_dark.png', f'{dir}/search_recommended_done_w10_dark.png', f'{dir}/search_app_done_w11_dark.png', f'{dir}/search_recommended_done_w11_dark.png'],
-			'search_ready': [f'{dir}/search_ready_w10_dark.png', f'{dir}/search_ready_w11_dark.png'],
-			'taskbar_option_news_off': [f'{dir}/taskbar_option_news_off_w10_dark.png'],
-			'taskbar_option_news': [f'{dir}/taskbar_option_news_w10_dark.png'],
-			'taskbar_option_search_icon': [f'{dir}/taskbar_option_search_icon_w10_dark.png'],
-			'taskbar_option_search': [f'{dir}/taskbar_option_search_w10_dark.png'],
-			'taskbar': [f'{dir}/taskbar_w10_dark.png'],
-			'unpin_from_taskbar': [f'{dir}/unpin_from_taskbar_w10_dark.png', f'{dir}/unpin_from_taskbar_w11_dark.png'],
+			'desktop_icon_this_pc_active': [
+				f'{dir}/desktop_icon_this_pc_active_w10.png',
+				f'{dir}/desktop_icon_this_pc_active_w11.png',
+			],
+			'desktop_icon_this_pc_inactive': [
+				f'{dir}/desktop_icon_this_pc_inactive_w10.png',
+				f'{dir}/desktop_icon_this_pc_inactive_w11.png',
+			],
+			'pin_to_taskbar': [
+				f'{dir}/pin_to_taskbar_w10_dark.png',
+				f'{dir}/pin_to_taskbar_w11_dark.png',
+			],
+			'powershell_ready': [
+				f'{dir}/powershell_ready_w10.png',
+				f'{dir}/powershell_ready_w11.png',
+			],
+			'run_title': [
+				f'{dir}/run_title_w10.png',
+				f'{dir}/run_title_w11.png',
+			],
+			'search_app_done': [
+				f'{dir}/search_app_done_w10_dark.png',
+				f'{dir}/search_app_done_selected_w10_dark.png',
+				f'{dir}/search_recommended_done_w10_dark.png',
+				f'{dir}/search_recommended_done_selected_w10_dark.png',
+				f'{dir}/search_app_done_w11_dark.png',
+				f'{dir}/search_app_done_selected_w11_dark.png',
+				f'{dir}/search_recommended_done_w11_dark.png',
+				f'{dir}/search_recommended_done_selected_w11_dark.png',
+			],
+			'search_ready': [
+				f'{dir}/search_ready_w10_dark.png',
+				f'{dir}/search_ready_w11_dark.png',
+			],
+			'taskbar_option_news_off': [
+				f'{dir}/taskbar_option_news_off_w10_dark.png',
+			],
+			'taskbar_option_news': [
+				f'{dir}/taskbar_option_news_w10_dark.png',
+			],
+			'taskbar_option_search_icon': [
+				f'{dir}/taskbar_option_search_icon_w10_dark.png',
+			],
+			'taskbar_option_search': [
+				f'{dir}/taskbar_option_search_w10_dark.png',
+			],
+			'taskbar': [
+				f'{dir}/taskbar_w10_dark.png',
+			],
+			'unpin_from_taskbar': [
+				f'{dir}/unpin_from_taskbar_w10_dark.png',
+				f'{dir}/unpin_from_taskbar_w11_dark.png',
+			],
 		})
 
 		self.winver = None
@@ -57,9 +102,11 @@ class Windows():
 		self.matt.typewrite(f'{command}; exit')
 		self.matt.hotkey('enter')
 
-	def win_release(self):
+	def is_win_10(self):
 		# https://stackoverflow.com/questions/66554824/get-windows-version-in-python
-		return platform.release()
+		version = int( platform.version().split('.')[2] )
+
+		return (19000 <= version <= 21999)
 
 	def unify_ui(self, languages='en-US,cs-CZ', display_language='en-US'):
 		self.run_powershell_command(
@@ -106,13 +153,17 @@ class Windows():
 					print(f'! PermissionError: unlink({path})')
 
 	def show_desktop_this_pc(self):
-		self.run('%windir%\System32\rundll32.exe shell32.dll,Control_RunDLL desk.cpl,,0')
-		self.matt.wait('desktop_icons_title')
-		self.matt.click('desktop_icon_this_pc')
+		self.matt.hotkey('win', 'd')
+		self.run(r'%windir%\System32\rundll32.exe shell32.dll,Control_RunDLL desk.cpl,,0')
+
+		this_pc, pos = self.matt.which('desktop_icon_this_pc_active', 'desktop_icon_this_pc_inactive')
+		if this_pc == 'desktop_icon_this_pc_inactive':
+			self.matt.click('desktop_icon_this_pc_inactive')
+
 		self.matt.hotkey('enter')
 
 	def setup_taskbar_search(self, mode):
-		if self.win_release() != '10':
+		if not self.is_win_10():
 			return
 
 		self.matt.right_click('taskbar')
@@ -126,7 +177,7 @@ class Windows():
 		self.matt.click(modes[mode])
 
 	def setup_taskbar_news(self, mode):
-		if self.win_release() != '10':
+		if not self.is_win_10():
 			return
 
 		self.matt.right_click('taskbar')
@@ -147,24 +198,28 @@ class Windows():
 
 	def unpin_from_taskbar(self, apps:list):
 		for app in apps:
-			self.search(app)
-			self.matt.right_click('search_app_done')
-
 			try:
+				self.search(app)
+				self.matt.right_click('search_app_done')
 				self.matt.click('unpin_from_taskbar', timeout=1.0)
 			except TimeoutError:
 				self.matt.hotkey('esc')
 
-			self.matt.hotkey('esc')
+			self.matt.hotkey('ctrl', 'a')
+			self.matt.hotkey('del')
+
+		self.matt.hotkey('esc')
 
 	def pin_to_taskbar(self, apps:list):
 		for app in apps:
-			self.search(app)
-			self.matt.right_click('search_app_done')
-
 			try:
+				self.search(app)
+				self.matt.right_click('search_app_done')
 				self.matt.click('pin_to_taskbar', timeout=1.0)
 			except TimeoutError:
 				self.matt.hotkey('esc')
 
-			self.matt.hotkey('esc')
+			self.matt.hotkey('ctrl', 'a')
+			self.matt.hotkey('del')
+
+		self.matt.hotkey('esc')

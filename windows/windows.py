@@ -36,12 +36,14 @@ class Windows():
 				f'{dir}/pin_to_taskbar_w11_dark.png',
 			],
 			'powershell_ready': [
-				f'{dir}/powershell_ready_w10.png',
-				f'{dir}/powershell_ready_w11.png',
+				f'{dir}/powershell_ready.png',
+				f'{dir}/powershell_ready.2.png',
 			],
 			'run_title': [
 				f'{dir}/run_title_w10.png',
+				f'{dir}/run_title_w10.2.png',
 				f'{dir}/run_title_w11.png',
+				f'{dir}/run_title_w11.2.png',
 			],
 			'search_app_done': [
 				f'{dir}/search_app_done_w10_dark.png',

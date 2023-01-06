@@ -1,4 +1,4 @@
-import os, sys, pathlib, re, platform
+import os, sys, pathlib, re, platform, subprocess
 from time import sleep
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,8 +12,8 @@ https://support.microsoft.com/en-us/windows/windows-keyboard-shortcuts-3d444b08-
 """
 class Windows():
 	CMD_DISABLE_TRANSPARENCY = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name EnableTransparency -Value 0 -Type Dword -Force'
-	CMD_ENABLE_DARK_THEME_APPS = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0 -Type Dword -Force'
-	CMD_ENABLE_DARK_THEME_SYSTEM = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0 -Type Dword -Force'
+	CMD_ACTIVATE_DARK_THEME_APPS = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0 -Type Dword -Force'
+	CMD_ACTIVATE_DARK_THEME_SYSTEM = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0 -Type Dword -Force'
 	CMD_SETUP_LANGUAGES = 'Set-WinUserLanguageList -Force -LanguageList {}'
 	CMD_SET_DISPLAY_LANGUAGE = 'Set-WinUILanguageOverride -Language {}'
 
@@ -23,22 +23,6 @@ class Windows():
 		dir = os.path.realpath(os.path.dirname(__file__)) + '/img'  # C:/windows-user-setup/windows/img
 		dir = dir.replace(os.getcwd(), '').lstrip('\\/')            # windows/img
 		self.matt.set_ui({
-			'desktop_icon_this_pc_active': [
-				f'{dir}/desktop_icon_this_pc_active_w10.png',
-				f'{dir}/desktop_icon_this_pc_active_w11.png',
-			],
-			'desktop_icon_this_pc_inactive': [
-				f'{dir}/desktop_icon_this_pc_inactive_w10.png',
-				f'{dir}/desktop_icon_this_pc_inactive_w11.png',
-			],
-			'pin_to_taskbar': [
-				f'{dir}/pin_to_taskbar_w10_dark.png',
-				f'{dir}/pin_to_taskbar_w11_dark.png',
-			],
-			'powershell_ready': [
-				f'{dir}/powershell_ready.png',
-				f'{dir}/powershell_ready.2.png',
-			],
 			'run_title': [
 				f'{dir}/run_title_w10.png',
 				f'{dir}/run_title_w10.2.png',
@@ -82,27 +66,25 @@ class Windows():
 
 		self.winver = None
 
-	def run(self, cmd:str):
-		self.matt.hotkey('win', 'r')
-		self.matt.wait('run_title')
-		self.matt.typewrite(cmd)
-		self.matt.hotkey('enter')
+	# def run(self, cmd:str):
+	# 	# subprocess.run(['explorer.exe', 'ms-settings:regionlanguage'])
+	# 	# subprocess.Popen(['explorer.exe', 'ms-settings:regionlanguage'])
+	#
+	# 	self.matt.hotkey('win', 'r')
+	# 	self.matt.wait('run_title')
+	# 	self.matt.typewrite(cmd)
+	# 	self.matt.hotkey('enter')
 
 	# def open_settings_language(self):
 	# 	# W10: ms-settings:regionlanguage-setdisplaylanguage
 	# 	# W11: ms-settings:regionlanguage                     # works on W10 as well
 	# 	self.run('ms-settings:regionlanguage')
 
-	def open_powershell(self):
-		self.run('powershell')
-		self.matt.wait('powershell_ready')
-		# self.matt.hotkey('win', 'up')
-		# self.matt.hotkey('win', 'up')
-
 	def run_powershell_command(self, command):
-		self.open_powershell()
-		self.matt.typewrite(f'{command}; exit')
-		self.matt.hotkey('enter')
+		subprocess.call([
+			r'%SystemRoot%\system32\WindowsPowerShell\v1.0\powershell.exe',
+			command
+		], shell=True)
 
 	def is_win_10(self):
 		# https://stackoverflow.com/questions/66554824/get-windows-version-in-python
@@ -112,8 +94,8 @@ class Windows():
 
 	def unify_ui(self, languages='en-US,cs-CZ', display_language='en-US'):
 		self.run_powershell_command(
-			f'{self.CMD_ENABLE_DARK_THEME_SYSTEM}; ' + \
-			f'{self.CMD_ENABLE_DARK_THEME_APPS}; ' + \
+			f'{self.CMD_ACTIVATE_DARK_THEME_SYSTEM}; ' + \
+			f'{self.CMD_ACTIVATE_DARK_THEME_APPS}; ' + \
 			f'{self.CMD_DISABLE_TRANSPARENCY}; ' + \
 			f'{self.CMD_SETUP_LANGUAGES.format(languages)}; ' + \
 			f'{self.CMD_SET_DISPLAY_LANGUAGE.format(display_language)}; ' + \
@@ -124,7 +106,7 @@ class Windows():
 		self.run_powershell_command(self.CMD_DISABLE_TRANSPARENCY)
 
 	def activate_dark_theme(self):
-		self.run_powershell_command(f'{self.CMD_ENABLE_DARK_THEME_APPS}; {self.CMD_ENABLE_DARK_THEME_SYSTEM}')
+		self.run_powershell_command(f'{self.CMD_ACTIVATE_DARK_THEME_APPS}; {self.CMD_ACTIVATE_DARK_THEME_SYSTEM}')
 
 	def setup_languages(self, languages):
 		self.run_powershell_command(self.CMD_SETUP_LANGUAGES.format(languages))
@@ -155,14 +137,15 @@ class Windows():
 					print(f'! PermissionError: unlink({path})')
 
 	def show_desktop_this_pc(self):
-		self.matt.hotkey('win', 'd')
-		self.run(r'%windir%\System32\rundll32.exe shell32.dll,Control_RunDLL desk.cpl,,0')
+		pass
+		# self.matt.hotkey('win', 'd')
+		# self.run(r'%windir%\System32\rundll32.exe shell32.dll,Control_RunDLL desk.cpl,,0')
 
-		this_pc, pos = self.matt.which('desktop_icon_this_pc_active', 'desktop_icon_this_pc_inactive')
-		if this_pc == 'desktop_icon_this_pc_inactive':
-			self.matt.click('desktop_icon_this_pc_inactive')
+		# this_pc, pos = self.matt.which('desktop_icon_this_pc_active', 'desktop_icon_this_pc_inactive')
+		# if this_pc == 'desktop_icon_this_pc_inactive':
+		# 	self.matt.click('desktop_icon_this_pc_inactive')
 
-		self.matt.hotkey('enter')
+		# self.matt.hotkey('enter')
 
 	def setup_taskbar_search(self, mode):
 		if not self.is_win_10():

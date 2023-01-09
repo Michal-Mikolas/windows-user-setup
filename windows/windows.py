@@ -1,4 +1,4 @@
-import os, sys, pathlib, re, platform, subprocess
+import os, sys, pathlib, re, platform, subprocess, glob, shutil
 from time import sleep
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -6,16 +6,16 @@ from matt.matt import Matt
 
 
 """
+Sources:
 https://winaero.com/ms-settings-commands-in-windows-10/
 http://woshub.com/ms-settings-uri-commands-windows-11/
 https://support.microsoft.com/en-us/windows/windows-keyboard-shortcuts-3d444b08-3a00-abd6-67da-ecfc07e86b98
+https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec#WindowsVersion=Windows_10
+https://www.dasm.cz/clanek/jak-z-windows-10-udelat-desktopovy-system
+https://www.dasm.cz/clanek/jak-z-windows-10-udelat-desktopovy-system-ii
+https://superuser.com/questions/217504/is-there-a-list-of-windows-special-directories-shortcuts-like-temp
 """
 class Windows():
-	CMD_DISABLE_TRANSPARENCY = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name EnableTransparency -Value 0 -Type Dword -Force'
-	CMD_ACTIVATE_DARK_THEME_APPS = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0 -Type Dword -Force'
-	CMD_ACTIVATE_DARK_THEME_SYSTEM = 'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0 -Type Dword -Force'
-	CMD_SETUP_LANGUAGES = 'Set-WinUserLanguageList -Force -LanguageList {}'
-	CMD_SET_DISPLAY_LANGUAGE = 'Set-WinUILanguageOverride -Language {}'
 
 	def __init__(self, cache_path:str) -> None:
 		self.matt = Matt(cache_file=cache_path)
@@ -66,19 +66,28 @@ class Windows():
 
 		self.winver = None
 
-	# def run(self, cmd:str):
-	# 	# subprocess.run(['explorer.exe', 'ms-settings:regionlanguage'])
-	# 	# subprocess.Popen(['explorer.exe', 'ms-settings:regionlanguage'])
-	#
-	# 	self.matt.hotkey('win', 'r')
-	# 	self.matt.wait('run_title')
-	# 	self.matt.typewrite(cmd)
-	# 	self.matt.hotkey('enter')
+	def is_win_10(self):
+		# https://stackoverflow.com/questions/66554824/get-windows-version-in-python
+		version = int( platform.version().split('.')[2] )
 
-	# def open_settings_language(self):
-	# 	# W10: ms-settings:regionlanguage-setdisplaylanguage
-	# 	# W11: ms-settings:regionlanguage                     # works on W10 as well
-	# 	self.run('ms-settings:regionlanguage')
+		return (19000 <= version <= 21999)
+
+
+	######                               #####
+	#     #  ####  #    # ###### #####  #     # #    # ###### #      #            #####    ##    ####  ###### #####
+	#     # #    # #    # #      #    # #       #    # #      #      #            #    #  #  #  #      #      #    #
+	######  #    # #    # #####  #    #  #####  ###### #####  #      #            #####  #    #  ####  #####  #    #
+	#       #    # # ## # #      #####        # #    # #      #      #            #    # ######      # #      #    #
+	#       #    # ##  ## #      #   #  #     # #    # #      #      #            #    # #    # #    # #      #    #
+	#        ####  #    # ###### #    #  #####  #    # ###### ###### ######       #####  #    #  ####  ###### #####
+	CMD_SHOW_TRAY_ICONS = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name EnableAutoTray -Value 0 -Type Dword -Force'
+	CMD_SHOW_FILE_EXTENSIONS = r'Set-ItemProperty -Path HKCU:\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name HideFileExt -Value 0 -Type Dword -Force'
+	CMD_SHOW_THIS_PC = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force; Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force'
+	CMD_CORTANA_OFF = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Personalization\Settings -Name AcceptedPrivacyPolicy -Value 0 -Type Dword -Force;Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitTextCollection -Value 1 -Type Dword -Force;Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitInkCollection -Value 1 -Type Dword -Force;Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore -Name HarvestContacts -Value 0 -Type Dword -Force'
+	CMD_DARK_THEME_ON = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0 -Type Dword -Force; Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0 -Type Dword -Force'
+	CMD_TRANSPARENCY_OFF = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name EnableTransparency -Value 0 -Type Dword -Force'
+	CMD_SETUP_LANGUAGES = r'Set-WinUserLanguageList -Force -LanguageList {}'
+	CMD_SET_DISPLAY_LANGUAGE = r'Set-WinUILanguageOverride -Language {}'
 
 	def run_powershell_command(self, command):
 		subprocess.call([
@@ -86,33 +95,76 @@ class Windows():
 			command
 		], shell=True)
 
-	def is_win_10(self):
-		# https://stackoverflow.com/questions/66554824/get-windows-version-in-python
-		version = int( platform.version().split('.')[2] )
+	def unhide_tray_icons(self):
+		self.run_powershell_command(self.CMD_SHOW_TRAY_ICONS)
 
-		return (19000 <= version <= 21999)
-
-	def unify_ui(self, languages='en-US,cs-CZ', display_language='en-US'):
-		self.run_powershell_command(
-			f'{self.CMD_ACTIVATE_DARK_THEME_SYSTEM}; ' + \
-			f'{self.CMD_ACTIVATE_DARK_THEME_APPS}; ' + \
-			f'{self.CMD_DISABLE_TRANSPARENCY}; ' + \
-			f'{self.CMD_SETUP_LANGUAGES.format(languages)}; ' + \
-			f'{self.CMD_SET_DISPLAY_LANGUAGE.format(display_language)}; ' + \
-			''
-		)
+	def unhide_file_extensions(self):
+		self.run_powershell_command(self.CMD_SHOW_FILE_EXTENSIONS)
 
 	def disable_transparency(self):
-		self.run_powershell_command(self.CMD_DISABLE_TRANSPARENCY)
+		self.run_powershell_command(self.CMD_TRANSPARENCY_OFF)
 
-	def activate_dark_theme(self):
-		self.run_powershell_command(f'{self.CMD_ACTIVATE_DARK_THEME_APPS}; {self.CMD_ACTIVATE_DARK_THEME_SYSTEM}')
+	def show_this_pc(self):
+		self.run_powershell_command(self.CMD_SHOW_THIS_PC)
+
+	def disable_cortana(self):
+		self.run_powershell_command(self.CMD_CORTANA_OFF)
+
+	def enable_dark_theme(self):
+		self.run_powershell_command(self.CMD_DARK_THEME_ON)
 
 	def setup_languages(self, languages):
+		# http://www.lingoes.net/en/translator/langcode.htm
 		self.run_powershell_command(self.CMD_SETUP_LANGUAGES.format(languages))
 
 	def set_display_language(self, language):
+		# http://www.lingoes.net/en/translator/langcode.htm
 		self.run_powershell_command(self.CMD_SET_DISPLAY_LANGUAGE.format(language))
+
+
+	#######                  #####
+	#       # #      ###### #     # #   #  ####  ##### ###### #    #       #####    ##    ####  ###### #####
+	#       # #      #      #        # #  #        #   #      ##  ##       #    #  #  #  #      #      #    #
+	#####   # #      #####   #####    #    ####    #   #####  # ## #       #####  #    #  ####  #####  #    #
+	#       # #      #            #   #        #   #   #      #    #       #    # ######      # #      #    #
+	#       # #      #      #     #   #   #    #   #   #      #    #       #    # #    # #    # #      #    #
+	#       # ###### ######  #####    #    ####    #   ###### #    #       #####  #    #  ####  ###### #####
+	def expand_path(self, path):
+		for (key, value) in os.environ.items():
+			path = path.replace(f'%{key}%', value)
+
+		return path
+
+	def exists(self, path):
+		path = self.expand_path(path)
+		return os.path.exists(path)
+
+	def copy(self, source:str, destination_dir:str):
+		source = self.expand_path(source)
+		destination_dir = self.expand_path(destination_dir)
+
+		source = source.rstrip('\\/')
+		destination_dir = destination_dir.rstrip('\\/')
+
+		if not os.path.exists(destination_dir):
+			os.makedirs(destination_dir)
+
+		source_mask = '^' + re.escape(source.rstrip('*'))\
+			.rstrip('\\/')\
+			.replace('\\*\\*', '.{0,}')\
+			.replace('\\*', '[^\\\\/]*')
+
+		for item in glob.glob(source, recursive=True):
+			item_relative = re.sub(source_mask, '', item).strip('\\/')
+			new_item = f'{destination_dir}\\{item_relative}'
+
+			if os.path.exists(new_item):
+				continue
+
+			if os.path.isfile(item):
+				shutil.copy(item, new_item)
+			elif os.path.isdir(item):
+				os.mkdir(new_item)
 
 	def clear_desktop(self, keep=[]):
 		self.clear_folder(str(pathlib.Path.home()) + '\\Desktop', keep=keep)
@@ -136,17 +188,14 @@ class Windows():
 				except PermissionError:
 					print(f'! PermissionError: unlink({path})')
 
-	def show_desktop_this_pc(self):
-		pass
-		# self.matt.hotkey('win', 'd')
-		# self.run(r'%windir%\System32\rundll32.exe shell32.dll,Control_RunDLL desk.cpl,,0')
 
-		# this_pc, pos = self.matt.which('desktop_icon_this_pc_active', 'desktop_icon_this_pc_inactive')
-		# if this_pc == 'desktop_icon_this_pc_inactive':
-		# 	self.matt.click('desktop_icon_this_pc_inactive')
-
-		# self.matt.hotkey('enter')
-
+	#     #
+	##   ##   ##   ##### #####       #####    ##    ####  ###### #####
+	# # # #  #  #    #     #         #    #  #  #  #      #      #    #
+	#  #  # #    #   #     #         #####  #    #  ####  #####  #    #
+	#     # ######   #     #         #    # ######      # #      #    #
+	#     # #    #   #     #         #    # #    # #    # #      #    #
+	#     # #    #   #     #         #####  #    #  ####  ###### #####
 	def setup_taskbar_search(self, mode):
 		if not self.is_win_10():
 			return
@@ -208,3 +257,17 @@ class Windows():
 			self.matt.hotkey('del')
 
 		self.matt.hotkey('esc')
+
+	# def run(self, cmd:str):
+	# 	# subprocess.run(['explorer.exe', 'ms-settings:regionlanguage'])
+	# 	# subprocess.Popen(['explorer.exe', 'ms-settings:regionlanguage'])
+	#
+	# 	self.matt.hotkey('win', 'r')
+	# 	self.matt.wait('run_title')
+	# 	self.matt.typewrite(cmd)
+	# 	self.matt.hotkey('enter')
+
+	# def open_settings_language(self):
+	# 	# W10: ms-settings:regionlanguage-setdisplaylanguage
+	# 	# W11: ms-settings:regionlanguage                     # works on W10 as well
+	# 	self.run('ms-settings:regionlanguage')

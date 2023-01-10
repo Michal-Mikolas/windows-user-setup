@@ -1,4 +1,4 @@
-import os, sys, pathlib, re, platform, subprocess, glob, shutil
+import os, sys, pathlib, re, platform, subprocess, glob, shutil, winreg
 from time import sleep
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,6 +14,8 @@ https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a
 https://www.dasm.cz/clanek/jak-z-windows-10-udelat-desktopovy-system
 https://www.dasm.cz/clanek/jak-z-windows-10-udelat-desktopovy-system-ii
 https://superuser.com/questions/217504/is-there-a-list-of-windows-special-directories-shortcuts-like-temp
+https://community.spiceworks.com/how_to/1142-obtain-an-uninstall-string-for-any-application
+https://serverfault.com/questions/950291/how-uninstall-a-program-using-the-uninstallstring-found-in-regedit-with-cmd-msie
 """
 class Windows():
 
@@ -132,6 +134,81 @@ class Windows():
 
 	def create_desktoop_shortcut(self, dest:str, name:str):
 		self.run_powershell_command(self.CMD_CREATE_DESKTOP_SHORTCUT.format(name, dest))
+
+	def uninstall(self, mask:str):
+		mask = mask.replace('*', '.*')
+
+		# HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall
+		reg = self.load_registry(r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall')
+
+		for name, key in reg['keys'].items():
+			display_name = key.get('values', {}).get('DisplayName', '')
+
+			if re.search(mask, name) or re.search(mask, display_name):
+				print(f'{key["path"]} - DisplayName: {key["values"]["DisplayName"]}')
+
+
+	######
+	#     # ######  ####  #  ####  ##### #####  #   #
+	#     # #      #    # # #        #   #    #  # #
+	######  #####  #      #  ####    #   #    #   #
+	#   #   #      #  ### #      #   #   #####    #
+	#    #  #      #    # # #    #   #   #   #    #
+	#     # ######  ####  #  ####    #   #    #   #
+	def load_registry(self, path:str):
+		result = {'keys': {}, 'values': {}}
+
+		root_folder = path.split('\\')[0]
+		path = re.sub(r'^[^\\]+\\', '', path)
+		r_conn = winreg.ConnectRegistry(None, getattr(winreg, root_folder))
+
+		#
+		# Keys
+		#
+		r_key = winreg.OpenKey(r_conn, path)
+		i = 0
+		while True:
+			try:
+				name = winreg.EnumKey(r_key, i)
+
+				children = self.load_registry(f'{root_folder}\{path}\{name}')
+
+				result['keys'][name] = {
+					'name': name,
+					'path': f'{root_folder}\{path}\{name}',
+					'keys': children['keys'],
+					'values': children['values'],
+				}
+
+				# key2 = winreg.OpenKey(reg, rf'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{x}')
+				# for i in range(0, 5):
+				# 	value = winreg.EnumValue(key2, i)
+				# 	print(f'- value: {value}')
+
+				i += 1
+			except OSError as e:
+				if str(e) != '[WinError 259] No more data is available':
+					print(f'{type(e)}: {str(e)}')
+				break
+
+		#
+		# Values
+		#
+		r_key = winreg.OpenKey(r_conn, path)
+		i = 0
+		while True:
+			try:
+				name, value, type_ = winreg.EnumValue(r_key, i)
+
+				result['values'][name] = value
+
+				i += 1
+			except OSError as e:
+				if str(e) != '[WinError 259] No more data is available':
+					print(f'{type(e)}: {str(e)}')
+				break
+
+		return result
 
 
 	#######                  #####

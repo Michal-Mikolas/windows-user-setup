@@ -82,12 +82,21 @@ class Windows():
 	#        ####  #    # ###### #    #  #####  #    # ###### ###### ######       #####  #    #  ####  ###### #####
 	CMD_SHOW_TRAY_ICONS = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name EnableAutoTray -Value 0 -Type Dword -Force'
 	CMD_SHOW_FILE_EXTENSIONS = r'Set-ItemProperty -Path HKCU:\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name HideFileExt -Value 0 -Type Dword -Force'
-	CMD_SHOW_THIS_PC = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force; Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force'
-	CMD_CORTANA_OFF = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Personalization\Settings -Name AcceptedPrivacyPolicy -Value 0 -Type Dword -Force;Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitTextCollection -Value 1 -Type Dword -Force;Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitInkCollection -Value 1 -Type Dword -Force;Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore -Name HarvestContacts -Value 0 -Type Dword -Force'
-	CMD_DARK_THEME_ON = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0 -Type Dword -Force; Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0 -Type Dword -Force'
+	CMD_SHOW_THIS_PC = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force; ' \
+		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force'
+	CMD_CORTANA_OFF = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Personalization\Settings -Name AcceptedPrivacyPolicy -Value 0 -Type Dword -Force; ' \
+		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitTextCollection -Value 1 -Type Dword -Force; ' \
+		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitInkCollection -Value 1 -Type Dword -Force; ' \
+		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore -Name HarvestContacts -Value 0 -Type Dword -Force'
+	CMD_DARK_THEME_ON = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0 -Type Dword -Force; ' \
+		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0 -Type Dword -Force'
 	CMD_TRANSPARENCY_OFF = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name EnableTransparency -Value 0 -Type Dword -Force'
 	CMD_SETUP_LANGUAGES = r'Set-WinUserLanguageList -Force -LanguageList {}'
 	CMD_SET_DISPLAY_LANGUAGE = r'Set-WinUILanguageOverride -Language {}'
+	CMD_CREATE_DESKTOP_SHORTCUT = r'$WshShell = New-Object -comObject WScript.Shell; ' \
+		+ r'$Shortcut = $WshShell.CreateShortcut("$Home\Desktop\{}.lnk"); ' \
+		+ r'$Shortcut.TargetPath = "{}"; ' \
+		+ r'$Shortcut.Save()'
 
 	def run_powershell_command(self, command):
 		subprocess.call([
@@ -120,6 +129,9 @@ class Windows():
 	def set_display_language(self, language):
 		# http://www.lingoes.net/en/translator/langcode.htm
 		self.run_powershell_command(self.CMD_SET_DISPLAY_LANGUAGE.format(language))
+
+	def create_desktoop_shortcut(self, dest:str, name:str):
+		self.run_powershell_command(self.CMD_CREATE_DESKTOP_SHORTCUT.format(name, dest))
 
 
 	#######                  #####

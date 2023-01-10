@@ -1,4 +1,4 @@
-import time
+import time, glob
 from windows.windows import Windows
 from windows.settings import Settings
 import config
@@ -17,7 +17,7 @@ windows = Windows(config.cache_path)
 #  #  # #    # #####  #  #
 #  #  # #    # #   #  #   #
  ## ##   ####  #    # #    #
-log('Unifying Windows UI')
+log('Preparing Windows user environment')
 
 log('- setting up tray icons to be all visible')
 windows.unhide_tray_icons()
@@ -44,7 +44,42 @@ log('- setting display language to en-US')
 windows.set_display_language('en-US')
 
 log('- adding shortcuts to Desktop')
-# TODO
+apps = {
+	'Acrobat Reader': [
+		'C:\\Program Files*\\Adobe\\Acrobat*\\Reader\\AcrRd*.exe',
+		'C:\\Program Files*\\Adobe\\Acrobat*\\Acrobat\\Acrobat.exe',
+	],
+	'Chrome': [
+		'C:\\Program Files*\\Google\\Chrome\\Application\\chrome.exe',
+	],
+	'Outlook': [
+		'C:\\Program Files*\\Microsoft Office\\Office*\\OUTLOOK.EXE',
+		'C:\\Program Files*\\Microsoft Office\\root\\Office*\\OUTLOOK.EXE',
+	],
+	'Word': [
+		'C:\\Program Files*\\Microsoft Office\\Office*\\WINWORD.EXE',
+		'C:\\Program Files*\\Microsoft Office\\root\\Office*\\WINWORD.EXE',
+	],
+	'Excel': [
+		'C:\\Program Files*\\Microsoft Office\\Office*\\EXCEL.EXE',
+		'C:\\Program Files*\\Microsoft Office\\root\\Office*\\EXCEL.EXE',
+	],
+}
+for (name, paths) in apps.items():
+	print(f'- - {name}')
+
+	file = None
+	for path in paths:
+		for file in glob.glob(path, recursive=True):
+			print(f'- - - adding shortcut to "{file}"')
+			windows.create_desktoop_shortcut(file, name)
+			break
+
+		if file:
+			break
+
+	if not file:
+		print(f'- - - app not found :-(')
 
 log('- clearing Desktop')
 windows.clear_desktop(keep=['acrobat', 'chrome', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba'])

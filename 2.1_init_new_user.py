@@ -46,7 +46,7 @@ windows.set_display_language('en-US')
 log('- adding shortcuts to Desktop')
 apps = {
 	'Acrobat Reader': [
-		'C:\\Program Files*\\Adobe\\Acrobat*\\Reader\\AcrRd*.exe',
+		'C:\\Program Files*\\Adobe\\Acrobat*\\Reader\\AcroRd*.exe',
 		'C:\\Program Files*\\Adobe\\Acrobat*\\Acrobat\\Acrobat.exe',
 	],
 	'Chrome': [
@@ -82,7 +82,7 @@ for (name, paths) in apps.items():
 		print(f'- - - app not found :-(')
 
 log('- clearing Desktop')
-windows.clear_desktop(keep=['acrobat', 'chrome', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba'])
+windows.clear_desktop(keep=['acrobat', 'chrome', 'outlook', 'word', 'excel', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba'])
 
 log('- setting up Chrome browser')
 chrome_home = '%LOCALAPPDATA%\\Google\\Chrome\\User Data'

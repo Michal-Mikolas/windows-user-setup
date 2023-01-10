@@ -1,5 +1,4 @@
-import os, sys, pathlib, re, platform, subprocess, glob, shutil
-from time import sleep
+import os, sys, pathlib, re, platform, subprocess, glob, shutil, time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from matt.matt import Matt
@@ -82,7 +81,10 @@ class Windows():
 	#        ####  #    # ###### #    #  #####  #    # ###### ###### ######       #####  #    #  ####  ###### #####
 	CMD_SHOW_TRAY_ICONS = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name EnableAutoTray -Value 0 -Type Dword -Force'
 	CMD_SHOW_FILE_EXTENSIONS = r'Set-ItemProperty -Path HKCU:\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name HideFileExt -Value 0 -Type Dword -Force'
-	CMD_SHOW_THIS_PC = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force; ' \
+	CMD_SHOW_THIS_PC = r'If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu")) { ' \
+		+ r'	New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu" | Out-Null; ' \
+		+ r'}; ' \
+		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force; ' \
 		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -Type Dword -Force'
 	CMD_CORTANA_OFF = r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Personalization\Settings -Name AcceptedPrivacyPolicy -Value 0 -Type Dword -Force; ' \
 		+ r'Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\InputPersonalization -Name RestrictImplicitTextCollection -Value 1 -Type Dword -Force; ' \
@@ -99,7 +101,7 @@ class Windows():
 		+ r'$Shortcut.Save()'
 
 	def run_powershell_command(self, command):
-		subprocess.call([
+		subprocess.run([
 			r'%SystemRoot%\system32\WindowsPowerShell\v1.0\powershell.exe',
 			command
 		], shell=True)

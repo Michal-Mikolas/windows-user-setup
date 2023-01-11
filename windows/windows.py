@@ -102,6 +102,9 @@ class Windows():
 		+ r'$Shortcut.TargetPath = "{}"; ' \
 		+ r'$Shortcut.Save()'
 
+	def run(self, command:str):
+		subprocess.run(command, shell=True)
+
 	def run_powershell_command(self, command):
 		subprocess.run([
 			r'%SystemRoot%\system32\WindowsPowerShell\v1.0\powershell.exe',
@@ -137,17 +140,22 @@ class Windows():
 	def create_desktoop_shortcut(self, dest:str, name:str):
 		self.run_powershell_command(self.CMD_CREATE_DESKTOP_SHORTCUT.format(name, dest))
 
-	def uninstall(self, mask:str):
-		mask = mask.replace('*', '.*')
+	def uninstall(self, mask:str, logger=None):
+		found_in_registry = self.find_uninstall_script_in_registry(mask, logger=logger)
+		found_in_files = self.find_uninstall_script_in_files(mask)
 
-		# HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall
-		reg = self.load_registry(r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall')
+		if found_in_registry:
+			for cmd in found_in_registry:
+				logger(f'> {cmd}')
+				self.run(cmd)
 
-		for name, key in reg['keys'].items():
-			display_name = key.get('values', {}).get('DisplayName', '')
+		elif found_in_files:
+			for cmd in found_in_files:
+				logger(f'> {cmd}')
+				self.run(cmd)
 
-			if re.search(mask, name) or re.search(mask, display_name):
-				print(f'{key["path"]} - DisplayName: {key["values"]["DisplayName"]}')
+		else:
+			logger('no uninstall script found')
 
 
 	######
@@ -157,6 +165,32 @@ class Windows():
 	#   #   #      #  ### #      #   #   #####    #
 	#    #  #      #    # # #    #   #   #   #    #
 	#     # ######  ####  #  ####    #   #    #   #
+	def find_uninstall_script_in_registry(self, mask, logger=None):
+		mask = mask.replace('*', '.*')
+		logger = logger or (lambda v: v)
+		found = []
+
+		paths = [
+			r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+			r'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall',
+		]
+		for path in paths:
+			reg = self.load_registry(path)
+
+			for name, key in reg['keys'].items():
+				display_name = key.get('values', {}).get('DisplayName', '')
+
+				if re.search(mask, name) or re.search(mask, display_name):
+					logger(f'{key["path"]} ({display_name})')
+
+					uninstall_string = key.get('values', {}).get('UninstallString', '')
+					quiet_uninstall_string = key.get('values', {}).get('QuietUninstallString', '')
+					if uninstall_string or quiet_uninstall_string:
+						cmd = quiet_uninstall_string or uninstall_string
+						found.append(cmd)
+
+		return found
+
 	def load_registry(self, path:str):
 		result = {'keys': {}, 'values': {}}
 
@@ -222,13 +256,17 @@ class Windows():
 	#       # ###### ######  #####    #    ####    #   ###### #    #       #####  #    #  ####  ###### #####
 	def expand_path(self, path):
 		for (key, value) in os.environ.items():
-			path = path.replace(f'%{key}%', value)
+			path = re.sub(f'%{key}%', re.escape(value), path, flags=re.IGNORECASE)
 
 		return path
 
 	def exists(self, path):
 		path = self.expand_path(path)
 		return os.path.exists(path)
+
+	def chdir(self, path:str):
+		path = self.expand_path(path)
+		os.chdir(path)
 
 	def copy(self, source:str, destination_dir:str):
 		source = self.expand_path(source)
@@ -278,6 +316,19 @@ class Windows():
 					os.unlink(path)
 				except PermissionError:
 					print(f'! PermissionError: unlink({path})')
+
+	def find_uninstall_script_in_files(self, mask):
+		paths = [
+			fr'C:\Program Files\{mask}\uninst*.exe',
+			fr'C:\Program Files (x86)\{mask}\uninst*.exe',
+		]
+
+		found = []
+		for path in paths:
+			for file in glob.glob(path, recursive=True):
+				found.append(file)
+
+		return found
 
 
 	#     #

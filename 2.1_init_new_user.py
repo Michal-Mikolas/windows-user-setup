@@ -1,6 +1,5 @@
-import time, glob, os
+import glob
 from windows.windows import Windows
-from windows.settings import Settings
 import config
 from datetime import datetime
 
@@ -53,6 +52,10 @@ log('- setting display language to en-US')
 windows.set_display_language('en-US')
 
 #
+log('- clearing Desktop')
+windows.clear_desktop(keep=['Adobe Acrobat', 'Chrome', 'Outlook', 'Word', 'Excel', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba'])
+
+#
 log('- adding shortcuts to Desktop')
 apps = {
 	'Adobe Acrobat': [
@@ -94,10 +97,6 @@ for (name, paths) in apps.items():
 
 	if not file:
 		print(f'- - - app not found :-(')
-
-#
-log('- clearing Desktop')
-windows.clear_desktop(keep=['Adobe Acrobat', 'Chrome', 'Outlook', 'Word', 'Excel', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba'])
 
 #
 log('- setting up Chrome browser')

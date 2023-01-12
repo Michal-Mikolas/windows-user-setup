@@ -295,11 +295,26 @@ class Windows():
 			elif os.path.isdir(item):
 				os.mkdir(new_item)
 
+	def has_desktop_shortcut(self, name:str):
+		name = re.sub(r'\.lnk$', '', name)
+
+		folders = [
+			r'%UserProfile%\Desktop',
+			r'C:\Users\Public\Desktop',
+		]
+		for folder in folders:
+			if self.exists(rf'{folder}\{name}.lnk'):
+				return True
+
+		return False
+
 	def clear_desktop(self, keep=[]):
-		self.clear_folder(str(pathlib.Path.home()) + '\\Desktop', keep=keep)
-		self.clear_folder('C:\\Users\\Public\\Desktop', keep=keep)
+		self.clear_folder(r'%UserProfile%\Desktop', keep=keep)
+		self.clear_folder(r'C:\Users\Public\Desktop', keep=keep)
 
 	def clear_folder(self, folder, keep=[]):
+		folder = self.expand_path(folder)
+
 		files = os.listdir(folder)
 		for file in files:
 			# Check for `keep` masks

@@ -1,7 +1,6 @@
-import os, sys, pathlib, re, platform, subprocess, glob, shutil, winreg
+import os, sys, re, platform, subprocess, glob, shutil, winreg
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from matt.matt import Matt
 
 
 """
@@ -18,52 +17,55 @@ https://serverfault.com/questions/950291/how-uninstall-a-program-using-the-unins
 """
 class Windows():
 
-	def __init__(self, cache_path:str) -> None:
-		self.matt = Matt(cache_file=cache_path)
+	def __init__(self, matt_cache_path:str = None) -> None:
+		if matt_cache_path:
+			from matt.matt import Matt
 
-		dir = os.path.realpath(os.path.dirname(__file__)) + '/img'  # C:/windows-user-setup/windows/img
-		dir = dir.replace(os.getcwd(), '').lstrip('\\/')            # windows/img
-		self.matt.set_ui({
-			'run_title': [
-				f'{dir}/run_title_w10.png',
-				f'{dir}/run_title_w10.2.png',
-				f'{dir}/run_title_w11.png',
-				f'{dir}/run_title_w11.2.png',
-			],
-			'search_app_done': [
-				f'{dir}/search_app_done_w10_dark.png',
-				f'{dir}/search_app_done_selected_w10_dark.png',
-				f'{dir}/search_recommended_done_w10_dark.png',
-				f'{dir}/search_recommended_done_selected_w10_dark.png',
-				f'{dir}/search_app_done_w11_dark.png',
-				f'{dir}/search_app_done_selected_w11_dark.png',
-				f'{dir}/search_recommended_done_w11_dark.png',
-				f'{dir}/search_recommended_done_selected_w11_dark.png',
-			],
-			'search_ready': [
-				f'{dir}/search_ready_w10_dark.png',
-				f'{dir}/search_ready_w11_dark.png',
-			],
-			'taskbar_option_news_off': [
-				f'{dir}/taskbar_option_news_off_w10_dark.png',
-			],
-			'taskbar_option_news': [
-				f'{dir}/taskbar_option_news_w10_dark.png',
-			],
-			'taskbar_option_search_icon': [
-				f'{dir}/taskbar_option_search_icon_w10_dark.png',
-			],
-			'taskbar_option_search': [
-				f'{dir}/taskbar_option_search_w10_dark.png',
-			],
-			'taskbar': [
-				f'{dir}/taskbar_w10_dark.png',
-			],
-			'unpin_from_taskbar': [
-				f'{dir}/unpin_from_taskbar_w10_dark.png',
-				f'{dir}/unpin_from_taskbar_w11_dark.png',
-			],
-		})
+			self.matt = Matt(cache_file=matt_cache_path)
+
+			dir = os.path.realpath(os.path.dirname(__file__)) + '/img'  # C:/windows-user-setup/windows/img
+			dir = dir.replace(os.getcwd(), '').lstrip('\\/')            # windows/img
+			self.matt.set_ui({
+				'run_title': [
+					f'{dir}/run_title_w10.png',
+					f'{dir}/run_title_w10.2.png',
+					f'{dir}/run_title_w11.png',
+					f'{dir}/run_title_w11.2.png',
+				],
+				'search_app_done': [
+					f'{dir}/search_app_done_w10_dark.png',
+					f'{dir}/search_app_done_selected_w10_dark.png',
+					f'{dir}/search_recommended_done_w10_dark.png',
+					f'{dir}/search_recommended_done_selected_w10_dark.png',
+					f'{dir}/search_app_done_w11_dark.png',
+					f'{dir}/search_app_done_selected_w11_dark.png',
+					f'{dir}/search_recommended_done_w11_dark.png',
+					f'{dir}/search_recommended_done_selected_w11_dark.png',
+				],
+				'search_ready': [
+					f'{dir}/search_ready_w10_dark.png',
+					f'{dir}/search_ready_w11_dark.png',
+				],
+				'taskbar_option_news_off': [
+					f'{dir}/taskbar_option_news_off_w10_dark.png',
+				],
+				'taskbar_option_news': [
+					f'{dir}/taskbar_option_news_w10_dark.png',
+				],
+				'taskbar_option_search_icon': [
+					f'{dir}/taskbar_option_search_icon_w10_dark.png',
+				],
+				'taskbar_option_search': [
+					f'{dir}/taskbar_option_search_w10_dark.png',
+				],
+				'taskbar': [
+					f'{dir}/taskbar_w10_dark.png',
+				],
+				'unpin_from_taskbar': [
+					f'{dir}/unpin_from_taskbar_w10_dark.png',
+					f'{dir}/unpin_from_taskbar_w11_dark.png',
+				],
+			})
 
 		self.winver = None
 

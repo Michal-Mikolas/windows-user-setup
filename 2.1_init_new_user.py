@@ -6,7 +6,8 @@ from datetime import datetime
 def log(msg):
 	print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
-windows = Windows(config.cache_path)
+# windows = Windows(config.cache_path)
+windows = Windows()
 windows.chdir('%UserProfile%')
 
 

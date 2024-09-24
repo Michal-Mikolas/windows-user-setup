@@ -159,6 +159,12 @@ class Windows():
 		else:
 			logger('no uninstall script found')
 
+	def settings_apps(self):
+		subprocess.run(['explorer.exe', 'ms-settings:appsfeatures'])
+
+	def settings_printers(self):
+		subprocess.run(['explorer.exe', 'ms-settings:printers'])
+
 
 	######
 	#     # ######  ####  #  ####  ##### #####  #   #
@@ -189,6 +195,7 @@ class Windows():
 					quiet_uninstall_string = key.get('values', {}).get('QuietUninstallString', '')
 					if uninstall_string or quiet_uninstall_string:
 						cmd = quiet_uninstall_string or uninstall_string
+						cmd = self.fix_uninstall_cmd(cmd)
 						found.append(cmd)
 
 		return found
@@ -225,7 +232,7 @@ class Windows():
 
 				i += 1
 			except OSError as e:
-				if str(e) != '[WinError 259] No more data is available':
+				if '[WinError 259]' not in str(e):
 					print(f'{type(e)}: {str(e)}')
 				break
 
@@ -242,11 +249,21 @@ class Windows():
 
 				i += 1
 			except OSError as e:
-				if str(e) != '[WinError 259] No more data is available':
+				if '[WinError 259]' not in str(e):
 					print(f'{type(e)}: {str(e)}')
 				break
 
 		return result
+
+	def fix_uninstall_cmd(self, cmd:str):
+		"""
+		C:\Program Files (x86)\Whatever\installer.exe /remove /quiet
+		->
+		"C:\Program Files (x86)\Whatever\installer.exe" /remove /quiet
+		"""
+		cmd = re.sub('^([^/]+)(\s+/[a-zA-Z/\s]+)?$', '"$1"$2', cmd)
+
+		return cmd
 
 
 	#######                  #####
@@ -258,7 +275,12 @@ class Windows():
 	#       # ###### ######  #####    #    ####    #   ###### #    #       #####  #    #  ####  ###### #####
 	def expand_path(self, path):
 		for (key, value) in os.environ.items():
-			path = re.sub(f'%{key}%', re.escape(value), path, flags=re.IGNORECASE)
+			path = re.sub(
+				f'%{key}%',
+				value.replace('\\', '\\\\'),
+				path,
+				flags=re.IGNORECASE
+			)
 
 		return path
 

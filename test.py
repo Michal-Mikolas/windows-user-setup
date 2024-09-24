@@ -1,6 +1,6 @@
 # import time, subprocess, winreg
 # from winregistry import WinRegistry
-# from windows.windows import Windows
-# import config
+from windows.windows import Windows
 
-# windows = Windows(config.cache_path)
+windows = Windows()
+windows.settings_apps()

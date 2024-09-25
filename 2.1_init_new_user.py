@@ -1,4 +1,4 @@
-import glob
+import os, glob
 from windows.windows import Windows
 import config
 from datetime import datetime

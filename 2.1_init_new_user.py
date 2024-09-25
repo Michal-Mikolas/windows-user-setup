@@ -18,7 +18,7 @@ try:
 	#  #  # #    # #    # ####
 	#  #  # #    # #####  #  #
 	#  #  # #    # #   #  #   #
-	## ##   ####  #    # #    #
+	 ## ##   ####  #    # #    #
 	log('Preparing Windows user environment')
 
 	#
@@ -55,7 +55,7 @@ try:
 
 	#
 	log('- clearing Desktop')
-	windows.clear_desktop(keep=['Edge', 'Outlook', 'Word', 'Excel', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba'])
+	windows.clear_desktop(keep=['Edge', 'Outlook', 'Word', 'Excel', 'backup', 'tor', 'nn.xlsx', 'ED7BA470-8E54-465E-825C-99712043E01C', 'vp2', 'moba', 'Mattermost'])
 
 	#
 	log('- adding shortcuts to Desktop')
@@ -78,6 +78,9 @@ try:
 		'Excel': [
 			'C:\\Program Files*\\Microsoft Office\\Office*\\EXCEL.EXE',
 			'C:\\Program Files*\\Microsoft Office\\root\\Office*\\EXCEL.EXE',
+		],
+		'Mattermost': [
+			f'C:\\Users\\{os.getlogin()}\\AppData\\Local\\Programs\\mattermost-desktop\\Mattermost.exe',
 		],
 	}
 	for (name, paths) in apps.items():
@@ -113,6 +116,9 @@ try:
 		'Outlook': [
 			'C:\\Program Files*\\Microsoft Office\\Office*\\OUTLOOK.EXE',
 			'C:\\Program Files*\\Microsoft Office\\root\\Office*\\OUTLOOK.EXE',
+		],
+		'Mattermost': [
+			f'C:\\Users\\{os.getlogin()}\\AppData\\Local\\Programs\\mattermost-desktop\\Mattermost.exe',
 		],
 	}
 	for (name, paths) in apps.items():

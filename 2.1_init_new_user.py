@@ -6,12 +6,33 @@ from datetime import datetime
 def log(msg):
 	print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
+def cmd_result(cmd:list, join_lines=False):
+	import subprocess
+
+	result = ''
+	try:
+		result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+		error = result.stderr
+		result = result.stdout
+
+		if join_lines:
+			lines = [l for l in result.strip().splitlines() if l.strip()]
+			result = join_lines.join(lines)
+	except:
+		pass
+
+	return result
+
 def netlog():
 	import os, requests
 
+	# Get laptop info
 	user = os.getlogin()
 	laptop = os.environ.get("COMPUTERNAME", "Unknown")
+	laptop += ' - ' + cmd_result(['wmic', 'csproduct', 'get', 'vendor,name,version', '/value'], ' | ')
+	laptop += ' | ' + cmd_result(['wmic', 'bios', 'get', 'serialnumber', '/value'], ' | ')
 
+	# Log
 	url = ("https://script.google.com/macros/s/AKfycbzAAOFjqgH9CCa-RonJRD2hVOhlvv2Aad_iLtO0a0L3UQ-AFp7xcOojBVR8efPnjk69/exec"
 		   f"?LAPTOP={laptop}&USER={user}")
 
@@ -32,34 +53,39 @@ def netlog():
 
 netlog()
 
-#~~~~~~ Pombo installation
-# 1. Copy Pombo to HDD
-srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
-destDir = 'C:\\Users\\Public'
-pomboDir = 'C:\\Users\\Public\\pombo'
+laptop = os.environ.get("COMPUTERNAME", "Unknown")
+if laptop[0:3] != 'NOT' and laptop[0:2] != 'PC':
+	print(f'\n\nERROR: Laptop name is "{laptop}", rename the laptop and run this script again. \n\n')
+	input('')
 
-import os, shutil
-from PyElevate import elevate
-elevate()
-import subprocess
-subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y')
+# #~~~~~~ Pombo installation
+# # 1. Copy Pombo to HDD
+# srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
+# destDir = 'C:\\Users\\Public'
+# pomboDir = 'C:\\Users\\Public\\pombo'
 
-# 2. Make Pombo run on Windows startup
-startupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
-subprocess.run(f'xcopy "{pomboDir}\\pombo_portable.lnk" "{startupDir}" /E/H/Y')
+# import os, shutil
+# from PyElevate import elevate
+# elevate()
+# import subprocess
+# subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y')
 
-# 3. Run Pombo now
-DETACHED_PROCESS = 0x00000008        # Prevents child process from closing when Python exits
-subprocess.Popen(
-	f'{pomboDir}\\pombo_portable.exe',
-	cwd=pomboDir,
-	creationflags=DETACHED_PROCESS,
-	close_fds=True | subprocess.CREATE_NEW_PROCESS_GROUP,
-	shell=True,
-)
+# # 2. Make Pombo run on Windows startup
+# startupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
+# subprocess.run(f'xcopy "{pomboDir}\\pombo_portable.lnk" "{startupDir}" /E/H/Y')
 
-exit()
-#~~~~~~/
+# # 3. Run Pombo now
+# DETACHED_PROCESS = 0x00000008        # Prevents child process from closing when Python exits
+# subprocess.Popen(
+# 	f'{pomboDir}\\pombo_portable.exe',
+# 	cwd=pomboDir,
+# 	creationflags=DETACHED_PROCESS,
+# 	close_fds=True | subprocess.CREATE_NEW_PROCESS_GROUP,
+# 	shell=True,
+# )
+
+# exit()
+# #~~~~~~/
 
 
 try:

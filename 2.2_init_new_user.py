@@ -2,6 +2,7 @@ import os, glob, shutil
 from windows.windows import Windows
 import config
 from datetime import datetime
+from getpass import getpass
 
 def log(msg):
 	print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
@@ -45,10 +46,12 @@ def netlog():
 			return data  # Return full response if status is success
 		else:
 			print("API call failed:", data)
+			exit() if getpass("Check your internet connection and try again... ") != 'Station123' else None
 			return None
 
 	except requests.exceptions.RequestException as e:
 		print("Request failed:", e)
+		exit() if getpass("Check your internet connection and try again... ") != 'Station123' else None
 		return None
 
 netlog()
@@ -56,36 +59,121 @@ netlog()
 laptop = os.environ.get("COMPUTERNAME", "Unknown")
 if laptop[0:3] != 'NOT' and laptop[0:2] != 'PC':
 	print(f'\n\nERROR: Laptop name is "{laptop}", rename the laptop and run this script again. \n\n')
-	input('')
+	exit() if getpass(f'\n\nERROR: Laptop name is "{laptop}", rename the laptop and run this script again. ') != 'Station123' else None
 
-# #~~~~~~ Pombo installation
-# # 1. Copy Pombo to HDD
-# srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
-# destDir = 'C:\\Users\\Public'
-# pomboDir = 'C:\\Users\\Public\\pombo'
 
-# import os, shutil
-# from PyElevate import elevate
-# elevate()
-# import subprocess
-# subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y')
 
-# # 2. Make Pombo run on Windows startup
-# startupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
-# subprocess.run(f'xcopy "{pomboDir}\\pombo_portable.lnk" "{startupDir}" /E/H/Y')
+#~~~~~~
+#~~~~~~ Pombo installation
+#~~~~~~
 
-# # 3. Run Pombo now
-# DETACHED_PROCESS = 0x00000008        # Prevents child process from closing when Python exits
-# subprocess.Popen(
-# 	f'{pomboDir}\\pombo_portable.exe',
-# 	cwd=pomboDir,
-# 	creationflags=DETACHED_PROCESS,
-# 	close_fds=True | subprocess.CREATE_NEW_PROCESS_GROUP,
-# 	shell=True,
-# )
+#
+# 1. Copy Pombo to HDD
+#
+srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
+destDir = 'C:\\Users\\Public'
+pomboDir = 'C:\\Users\\Public\\pombo'
 
-# exit()
-# #~~~~~~/
+import os, shutil
+from PyElevate import elevate
+elevate()
+import subprocess
+subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y/R')
+
+#
+# 2. Make Pombo run on Windows startup
+#
+def run_schtasks(args):
+	try:
+		# Use shell=False and pass args as a list for better security and handling. Schtasks typically requires administrator privileges for system-wide tasks
+		process = subprocess.run(['schtasks.exe'] + args,
+								 capture_output=True,
+								 text=True,
+								 check=True,  # Raises CalledProcessError on non-zero exit code
+								 creationflags=subprocess.CREATE_NO_WINDOW)  # Hide console window
+		print(f"schtasks {args[0]} output:\n{process.stdout}")
+		return True
+	except FileNotFoundError:
+		print("Error: schtasks.exe not found. Is it in your system's PATH?")
+		return False
+	except subprocess.CalledProcessError as e:
+		print(f"Error running schtasks {' '.join(args)}.")
+		print(f"Return Code: {e.returncode}")
+		print(f"Output:\n{e.stdout}")
+		print(f"Error Output:\n{e.stderr}")
+		if "ERROR: Access is denied." in e.stderr or e.returncode == 5:
+			print("\nHint: This command requires Administrator privileges.")
+		return False
+	except Exception as e:
+		print(f"An unexpected error occurred running schtasks: {e}")
+		return False
+
+def create_startup_task(task_name, xml_path):
+	print(f"\nAttempting to create scheduled task '{task_name}'...")
+
+	if not os.path.exists(xml_path):
+		print(f"Error: XML path not found: {xml_path}")
+		return False
+	if not os.path.isabs(xml_path):
+		print(f"Error: Path must be absolute: {xml_path}")
+		return False
+
+	args = [
+		'/create',
+		'/tn', task_name,  # /tn: Task Name
+		'/xml', xml_path,  # /xml: Path to the definition file
+		'/f'               # /f: Force creation (overwrite if exists)
+	]
+	return run_schtasks(args)
+
+def delete_startup_task(task_name):
+	print(f"Attempting to delete scheduled task '{task_name}'...")
+	args = ['/delete', '/tn', task_name, '/f']
+	return run_schtasks(args)
+
+def trigger_task(task_name):
+	print(f"Attempting to run scheduled task '{task_name}' now...")
+
+	# Construct the arguments for schtasks.exe /run
+	args = [
+		'/run',
+		'/tn', task_name  # /tn: Task Name
+	]
+
+	# Call the helper function to execute the command
+	success = run_schtasks(args)
+	if success:
+		print(f"Successfully requested Task Scheduler to run '{task_name}'.")
+	else:
+		print(f"Failed to run task '{task_name}'. Check errors above.")
+
+	return success
+
+task_created = create_startup_task('pombo', f"{pomboDir}\\pombo_task.xml")
+startupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
+if task_created:
+	subprocess.run(f'rm "{startupDir}\\pombo.lnk"', shell=True)
+else:
+	subprocess.run(f'copy /Y "{pomboDir}\\pombo.lnk" "{startupDir}"', shell=True)
+
+#
+# 3. Run Pombo now
+#
+if task_created:
+	trigger_task('pombo')
+else:
+	DETACHED_PROCESS = 0x00000008        # Prevents child process from closing when Python exits
+	subprocess.Popen(
+		f'{pomboDir}\\pombo.exe',
+		cwd=pomboDir,
+		creationflags=DETACHED_PROCESS,
+		close_fds=True | subprocess.CREATE_NEW_PROCESS_GROUP,
+		shell=True,
+	)
+#~~~~~~/
+#~~~~~~/
+#~~~~~~/
+
 
 
 try:
@@ -265,7 +353,7 @@ try:
 	print('')
 	log('- Tips: ')
 	log('- - Switch Windows language to Czech')
-	log('- - Manage startup apps')
+	log('- - Manage startup apps (keep enabled: ecmds.exe, Mattermost)')
 	log('- - Restart PC')
 
 except Exception as e:

@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['C:\\Users\\mikolas\\Projects\\windows-user-setup\\2.1_init_new_user.py'],
+    ['C:\\Users\\mikolas\\Projects\\windows-user-setup\\2.2_init_new_user.py'],
     pathex=[],
     binaries=[],
     datas=[('C:\\Users\\mikolas\\Projects\\windows-user-setup\\windows', 'windows/')],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='2.1_init_new_user',
+    name='2.2_init_new_user',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

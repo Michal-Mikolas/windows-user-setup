@@ -66,24 +66,8 @@ if laptop[0:3] != 'NOT' and laptop[0:2] != 'PC':
 #~~~~~~
 #~~~~~~ Pombo installation
 #~~~~~~
-
-#
-# 1. Copy Pombo to HDD
-#
-srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
-destDir = 'C:\\Users\\Public'
-pomboDir = 'C:\\Users\\Public\\pombo'
-
-import os, shutil
-from PyElevate import elevate
-elevate()
-import subprocess
-subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y/R')
-
-#
-# 2. Make Pombo run on Windows startup
-#
 def run_schtasks(args):
+	import subprocess
 	try:
 		# Use shell=False and pass args as a list for better security and handling. Schtasks typically requires administrator privileges for system-wide tasks
 		process = subprocess.run(['schtasks.exe'] + args,
@@ -149,6 +133,42 @@ def trigger_task(task_name):
 
 	return success
 
+def stop_task(task_name):
+	print(f"Attempting to stop scheduled task '{task_name}' now...")
+
+	# Construct the arguments for schtasks.exe /run
+	args = [
+		'/End',
+		'/tn', task_name  # /tn: Task Name
+	]
+
+	# Call the helper function to execute the command
+	success = run_schtasks(args)
+	if success:
+		print(f"Successfully requested Task Scheduler to stop '{task_name}'.")
+	else:
+		print(f"Failed to stop task '{task_name}'. Check errors above.")
+
+	return success
+
+#
+# 1. Copy Pombo to HDD
+#
+srcDir = '\\\\10.0.0.12\\all\\_INSTALL\\Software\\pombo'
+destDir = 'C:\\Users\\Public'
+pomboDir = 'C:\\Users\\Public\\pombo'
+
+import os, shutil, time
+from PyElevate import elevate
+elevate()
+stop_task('pombo')
+time.sleep(3)  # wait for the task to be killed
+import subprocess
+subprocess.run(f'xcopy "{srcDir}" "{destDir}" /E/H/Y/R')
+
+#
+# 2. Make Pombo run on Windows startup
+#
 task_created = create_startup_task('pombo', f"{pomboDir}\\pombo_task.xml")
 startupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
 if task_created:
@@ -173,6 +193,7 @@ else:
 #~~~~~~/
 #~~~~~~/
 #~~~~~~/
+# (input(), exit())  ###
 
 
 
@@ -230,9 +251,9 @@ try:
 	#
 	log('- adding shortcuts to Desktop')
 	apps = {
-		# 'Chrome': [
-		# 	'C:\\Program Files*\\Google\\Chrome\\Application\\chrome.exe',
-		# ],
+		'Chrome': [
+			'C:\\Program Files*\\Google\\Chrome\\Application\\chrome.exe',
+		],
 		# 'Adobe Acrobat': [
 		# 	'C:\\Program Files*\\Adobe\\Acrobat*\\Reader\\AcroRd*.exe',
 		# 	'C:\\Program Files*\\Adobe\\Acrobat*\\Acrobat\\Acrobat.exe',
@@ -279,6 +300,9 @@ try:
 		'Edge': [
 			'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
 		],
+		'Chrome': [
+			'C:\\Program Files*\\Google\\Chrome\\Application\\chrome.exe',
+		],
 		'Excel': [
 			'C:\\Program Files*\\Microsoft Office\\Office*\\EXCEL.EXE',
 			'C:\\Program Files*\\Microsoft Office\\root\\Office*\\EXCEL.EXE',
@@ -301,6 +325,22 @@ try:
 				windows.run(file)
 
 				if 'Edge' in file:
+					print('')
+					input('Install the Edge extension please!')
+					print('')
+					windows.run(f'"{file}" "https://microsoftedge.microsoft.com/addons/detail/datadeck/ahbodcpioanbmiaahimpflcopbckameo"')
+					input('...and install Chrome browser')
+					print('')
+					windows.run(f'"{file}" "https://www.google.com/chrome/"')
+					print('')
+					input('Press ENTER to continue...')
+					print('')
+
+				if 'Chrome' in file:
+					print('')
+					input('Install the Chrome extension please!')
+					print('')
+					windows.run(f'"{file}" "https://chromewebstore.google.com/detail/datadeck/nebkjlepbimdhlfakkdkdnjgcgcplbmk"')
 					print('')
 					input('Press ENTER to continue...')
 					print('')
